@@ -290,20 +290,28 @@ function App() {
         </ol>
       </div>
       <div>
-        <p>Algorithm and Implementation Details</p>
+        <h2>Algorithm and Implementation Details</h2>
         <ol>
           
-          <li><p>3D Control: reimplemented the 3D control system using the <code>gl-matrix</code> library.</p></li>
           <li>
-            <p>Forward Kinematics (FK):</p>
+            <h3>3D Control</h3>
+            <p>reimplemented the 3D control system using the <code>gl-matrix</code> library.</p>
             <p>
-              Suppose we have n linkages <b>L</b><sub>1</sub>, <b>L</b><sub>2</sub>, ..., <b>L</b><sub>n</sub>, (where n=4 in this assignment)
+              The <code>get_mousepos</code> method of html <code>{'<canvas>'}</code> gives a positive delta y when moving mouse upward, which is oppsite to what regular mouse event `clientY` would give. <br />
+              That's why the reference implementation in <code>camera.js</code> on <a href="https://glitch.com/~legacygl-js">glitch</a> has not negated the delta y.
+            </p>
+          </li>
+          <li>
+            <h3>Forward Kinematics (FK)</h3>
+            <p>
+              Suppose we have n linkages, whose position vector are <b>L</b><sub>1</sub>, <b>L</b><sub>2</sub>, ..., <b>L</b><sub>n</sub>, (where n=4 in this assignment)
               and the length of each linkage is l<sub>1</sub>, l<sub>2</sub>, ..., l<sub>n</sub>.
-              The parent linkage of <b>L</b><sub>i</sub> is <b>L</b><sub>i-1</sub>, and <b>L</b><sub>1</sub> = (0, 0, 0).
+              The parent linkage of <b>L</b><sub>i</sub> is <b>L</b><sub>i-1</sub>. Thus the i-th linkage can be represented as <b>L</b><sub>i-1</sub><b>L</b><sub>i</sub>.
+              For simplicity, we add a virtual linkage <b>L</b><sub>0</sub> at the origin (0, 0, 0).
             </p>
             <p>
               To uniquely determine the position and orientation of every linkage, 
-              we use <code>pitch<sub>i</sub></code> and <code>rotate<sub>i</sub></code> to represent the attitude of linkage <b>L</b><sub>i</sub> with respect to its parent linkage <b>L</b><sub>i-1</sub>.</p>
+              we use <code>pitch<sub>i</sub></code> and <code>rotate<sub>i</sub></code> to represent the attitude of linkage <b>L</b><sub>i-1</sub><b>L</b><sub>i</sub> with respect to its parent linkage <b>L</b><sub>i-1</sub>.</p>
               we have tried other approaches such as using position vector directly, but it is <b>very</b> numerically unstable.
               In following implementation, we normalize each vector that can be normalized, to avoid numerical instability.
             <p>
@@ -311,18 +319,18 @@ function App() {
               and <code>rotate<sub>i</sub></code> is the angle between <b>L</b><sub>i</sub> and the <code><b>up</b><sub>i</sub></code> vector in <b>L</b><sub>i</sub>'s local coordinate system. </p>
             <p><code><b>up</b><sub>1</sub></code> vector is fixed to (0, 1, 0), and we suppose that <b>L</b><sub>1</sub> has a 'virtual' parent linkage parallel to the x-axis.</p>
             <p>
-              To obtain each linkage's position and orientation, 
-              we begin with <code>up<sub>1</sub></code> = (0, 1, 0), <code>view<sub>1</sub></code> = (1, 0, 0), and <b>L</b><sub>1</sub> (0, 0, 0), 
-              calculate the rotatation quaternion <code>q<sub>i</sub></code> for each linkage <b>L</b><sub>i</sub> using the <code>pitch<sub>i</sub></code> and <code>rotate<sub>i</sub></code>. 
-              After we get <b>L</b><sub>i</sub>, we also need to rotate <code>up<sub>i</sub></code> by <code>q<sub>i</sub></code> to obtain <code>up<sub>i+1</sub></code>.
-              Note that <code>q<sub>i</sub></code>'s rotation axis is parallel to <b>L</b><sub>i-1</sub>. For concrete Implementation, you can refer to the <code>fk</code> function. (<code>fk</code> stands for nothing but forward kinematics)
+              To obtain each linkage's position and orientation, we begin with <code>i</code>=1, <code>up<sub>1</sub></code> = (0, 1, 0), and <b>L</b><sub>0</sub> (0, 0, 0). 
+              Using <code>up<sub>i</sub></code> and parent linkage <b>L</b><sub>i-2</sub><b>L</b><sub>i-1</sub> we calculate <code>right<sub>i</sub></code> vector, and the rotatation quaternion <code>q<sub>i</sub></code> 
+              for each linkage <b>L</b><sub>i-1</sub><b>L</b><sub>i</sub> using the <code>pitch<sub>i</sub></code> and <code>rotate<sub>i</sub></code>. 
+              After we got <b>L</b><sub>i</sub>, we also need to rotate <code>up<sub>i</sub></code> by <code>q<sub>i</sub></code> to obtain <code>up<sub>i+1</sub></code>.
+              Note that <code>q<sub>i</sub></code>'s rotation axis is parallel to <b>L</b><sub>i-2</sub><b>L</b><sub>i-1</sub>. For concrete Implementation, please refer to the <code>fk</code> function in <code>src/App.tsx</code>. (<code>fk</code> stands for nothing but forward kinematics)
             </p>
             <p>
-              If the implementation is correct, you should see that the length of each linkage is fixed, and part of the angles are fixed (depending on which linkage you select).
+              If the implementation is correct, you can see that the length of each linkage is fixed, and part of the angles are fixed (depending on which linkage you select).
             </p>
           </li>
           <li>
-            <p>Inverse Kinematics (IK):</p>
+            <h3>Inverse Kinematics (IK)</h3>
             <p>
               To solve the Inverse Kinematics problem, we use the Cyclic Coordinate Descent (CCD) method. 
               The basic idea is to iteratively adjust the orientation of each linkage to make the end effector reach the target position.
@@ -337,6 +345,7 @@ function App() {
               <li> Never normalize the zero vector. </li>
               <li> Radian-Degree conversion is necessary. </li>
             </ol>
+            <p>Note: default tolerance is 10<sup>-3</sup> for the distance between the end effector and the target position, and the maximum number of iterations is set to 10.</p>
           </li>
         </ol>
       </div>
